@@ -26,15 +26,15 @@ func executor(bank *bank, executorId int, ProcessedTransaction <-chan transactio
 
 		bank.lockAccount(t.from, strconv.Itoa(executorId))
 		fmt.Println("Executor\t", executorId, "locked account", from)
-		/*bank.lockAccount(t.to, strconv.Itoa(executorId))
-		fmt.Println("Executor\t", executorId, "locked account", to)*/
+		bank.lockAccount(t.to, strconv.Itoa(executorId))
+		fmt.Println("Executor\t", executorId, "locked account", to)
 
 		bank.execute(t, executorId)
 
 		bank.unlockAccount(t.from, strconv.Itoa(executorId))
 		fmt.Println("Executor\t", executorId, "unlocked account", from)
-		/*bank.unlockAccount(t.to, strconv.Itoa(executorId))
-		fmt.Println("Executor\t", executorId, "unlocked account", to)*/
+		bank.unlockAccount(t.to, strconv.Itoa(executorId))
+		fmt.Println("Executor\t", executorId, "unlocked account", to)
 
 		bank.removeCompleted(e, executorId) // Removing this line will break visualisations.
 		semaphores[from].Post()
@@ -55,32 +55,16 @@ func manager(bank *bank, transactionQueue <-chan transaction, processedTransacti
 		ts[i] = t
 	}
 
+	transactionMap := make([][]transaction, 6, 6)
+
+	for _, t := range ts {
+		transactionMap[t.from][t.to] = t
+		transactionMap[t.to][t.from] = t
+	}
+
 	i := 0
-LOOP:
-	for {
-		if len(ts) != 0 {
-			if i >= len(ts) {
-				i = 0
-			}
-			t := ts[i]
+	for t := range transactionMap[i] {
 
-			from := bank.getAccountName(t.from)
-			to := bank.getAccountName(t.to)
-			if Semaphores[from].GetValue() == 0 || Semaphores[to].GetValue() == 3 {
-				i = i + 1
-				continue
-			} else {
-
-				Semaphores[from].Wait()
-				Semaphores[to].Wait()
-
-				ts = append(ts[:i], ts[i+1:]...)
-				processedTransaction <- t
-				i = i + 1
-			}
-		} else {
-			break LOOP
-		}
 	}
 }
 
