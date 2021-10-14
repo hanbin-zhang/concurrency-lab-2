@@ -1,0 +1,11 @@
+digraph bank {
+	 0 [label= "A\n" , pos= "1,0!" , shape=circle, fixedsize=true, width=0.5 ]
+	 1 [label= "B\n4" , pos= "0,1!" , shape=circle, fixedsize=true, width=0.5 ]
+	 2 [label= "C\n" , pos= "1,2!" , shape=circle, fixedsize=true, width=0.5 ]
+	 3 [label= "D\n3" , pos= "2,2!" , shape=circle, fixedsize=true, width=0.5 ]
+	 4 [label= "E\n" , pos= "3,1!" , shape=circle, fixedsize=true, width=0.5 ]
+	 5 [label= "F\n" , pos= "2,0!" , shape=circle, fixedsize=true, width=0.5 ]
+	 "1" -> "5" [label= "4" ]
+	 "3" -> "0" [label= "3" ]
+	 "2" -> "4" [label= "0" ]
+}

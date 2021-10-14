@@ -66,7 +66,7 @@ LOOP:
 
 			from := bank.getAccountName(t.from)
 			to := bank.getAccountName(t.to)
-			if Semaphores[from].GetValue() == 0 || Semaphores[to].GetValue() == 3 {
+			if Semaphores[from].GetValue() == 0 || Semaphores[to].GetValue() == 0 {
 				i = i + 1
 				continue
 			} else {
