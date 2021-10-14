@@ -14,7 +14,8 @@ var debug *bool
 
 // An executor is a type of a worker goroutine that handles the incoming transactions.
 func executor(bank *bank, executorId int, ProcessedTransaction <-chan transaction, done chan<- bool,
-	semaphores map[string]semaphore.Semaphore) {
+	semaphores map[string]semaphore.Semaphore,
+	AvoidBusyWaiting semaphore.Semaphore) {
 	for {
 		t := <-ProcessedTransaction
 
@@ -39,6 +40,7 @@ func executor(bank *bank, executorId int, ProcessedTransaction <-chan transactio
 		bank.removeCompleted(e, executorId) // Removing this line will break visualisations.
 		semaphores[from].Post()
 		semaphores[to].Post()
+		AvoidBusyWaiting.Post()
 		done <- true
 	}
 }
@@ -48,7 +50,8 @@ func toChar(i int) rune {
 }
 
 func manager(bank *bank, transactionQueue <-chan transaction, processedTransaction chan transaction,
-	Semaphores map[string]semaphore.Semaphore) {
+	Semaphores map[string]semaphore.Semaphore,
+	AvoidBusyWaiting semaphore.Semaphore) {
 	ts := make([]transaction, 1000)
 	for i := 0; i < 1000; i++ {
 		t := <-transactionQueue
@@ -59,6 +62,8 @@ func manager(bank *bank, transactionQueue <-chan transaction, processedTransacti
 LOOP:
 	for {
 		if len(ts) != 0 {
+			AvoidBusyWaiting.Wait()
+			AvoidBusyWaiting.Post()
 			if i >= len(ts) {
 				i = 0
 			}
@@ -73,7 +78,7 @@ LOOP:
 
 				Semaphores[from].Wait()
 				Semaphores[to].Wait()
-
+				AvoidBusyWaiting.Wait()
 				ts = append(ts[:i], ts[i+1:]...)
 				processedTransaction <- t
 				i = i + 1
@@ -124,10 +129,11 @@ func main() {
 	for i := 0; i < 6; i++ {
 		semaphores[bank.getAccountName(i)] = semaphore.Init(1, 1)
 	}
-	go manager(&bank, transactionQueue, processedTransaction, semaphores)
+	AvoidBusyWaiting := semaphore.Init(3, 3)
+	go manager(&bank, transactionQueue, processedTransaction, semaphores, AvoidBusyWaiting)
 	for i := 0; i < bankSize; i++ {
 
-		go executor(&bank, i, processedTransaction, done, semaphores)
+		go executor(&bank, i, processedTransaction, done, semaphores, AvoidBusyWaiting)
 	}
 
 	for total := 0; total < transactions; total++ {
